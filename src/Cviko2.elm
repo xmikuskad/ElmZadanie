@@ -85,3 +85,52 @@ zip zoz1 zoz2 =
         [] -> []
         first2 :: rest2 -> (first1, first2) :: zip rest1 rest2
 -}
+
+{-
+main =
+  text <| Debug.toString
+       <| map ((+) 5) [1,2,3,4,5]
+
+
+map : (a->b) -> List a -> List b
+map fun zoz=
+  case zoz of
+    [] -> []
+    first :: rest -> fun first :: map fun rest
+-}
+
+{-
+main =
+  text <| Debug.toString
+       <| fromTuple String.fromInt identity (1,"aaa")
+
+
+fromTuple : (a->String) -> (b->String) -> (a,b) -> String
+fromTuple fun1 fun2 (a,b) =
+  "(" ++ fun1 a ++ "," ++ fun2 b ++ ")"
+-}
+
+{-
+main =
+  text <| Debug.toString
+       <| foldl (::) [] [1,2,3]
+
+foldl : (a->b->b) ->b -> List a -> b
+foldl fun acc zoz =
+  case zoz of
+    [] -> acc
+    f :: r -> foldl fun (fun f acc) r
+
+-}
+
+-- DOROBIT FOLDR!
+
+{-
+
+foldr : (a->b->b) ->b -> List a -> b
+foldr fun acc zoz =
+  case zoz of
+    [] -> acc
+    f :: r -> fun f (foldr fun acc r)
+
+-}
