@@ -40,6 +40,9 @@ type Msg
   | Insert
   | IsIn
   | FromList
+  | Remove
+  | Show
+  | Card
 
 
 update : Msg -> Model -> Model
@@ -96,6 +99,32 @@ update msg (st, li) =
       else (Stavy "" "" "" ("Zoznam "++st.zoznam++" pridany do zoznamu " ++st.meno)
            , fromList st.meno (empty st.meno li) (String.split " " st.zoznam))
 
+    Remove ->
+      if st.meno == "" 
+      then (Stavy "" "" "" "Treba vlozit meno zoznamu", li)
+      else if st.prvok == ""
+      then (Stavy "" "" "" "Treba vlozit prvok", li)
+      else if List.member st.meno (getFirsts li)
+      then (Stavy "" "" "" ("Prvok "++st.prvok++" zmazany zo zoznamu " ++st.meno)
+           , delete st.meno st.prvok li)
+      else (Stavy "" "" "" ("Neznamy zoznam "  ++ st.meno), li)    
+
+    Show ->
+      (Stavy "" "" "" (if st.meno == "" 
+                       then "Treba vlozit meno zoznamu" 
+                       else if List.member st.meno (getFirsts li)
+                       then "Hodnota zoznamu " ++ st.meno ++ " je " ++ show st.meno li
+                       else "Neznamy zoznam "  ++ st.meno)
+       , li)   
+
+    Card ->
+      (Stavy "" "" "" (if st.meno == "" 
+                       then "Treba vlozit meno zoznamu" 
+                       else if List.member st.meno (getFirsts li)
+                       then "Pocet unikatnych prvkov zoznamu " ++ st.meno ++ " je " ++ String.fromInt(card st.meno li)
+                       else "Neznamy zoznam "  ++ st.meno)
+       , li)             
+
 -- VIEW
 
 
@@ -110,13 +139,19 @@ view (st, li) =
     , viewInput "text" "Prvok/druhy zoznam" st.prvok Prvok
     , br [][]
     , viewInput "text" "Zoznam prvkov" st.zoznam Zoznam
+    , text " Pri oddelovani prvkov zoznamu pouzite medzeru"
     , br [][]
     , br [][]
     , button [ onClick Empty ] [ text "Empty" ]
     , button [ onClick ShowRep ] [ text "ShowRep" ]
     , button [ onClick Insert ] [ text "Insert" ]   
     , button [ onClick IsIn ] [ text "IsIn" ] 
-    , button [ onClick FromList ] [ text "FromList" ]        
+    , br [][]
+    , br [][]
+    , button [ onClick FromList ] [ text "FromList" ] 
+    , button [ onClick Remove ] [ text "Remove" ]  
+    , button [ onClick Show ] [ text "Show" ]   
+    , button [ onClick Card ] [ text "Card" ]            
     , br [][]
     , br [][]
     , div [][text "Definovane zoznamy: "]
@@ -173,6 +208,24 @@ isInHelper prvok list =
       if first == prvok
       then "Prvok je v mnozine"
       else isInHelper prvok rest
+
+deleteHelper : String -> List (String) -> List (String)
+deleteHelper prvok list =
+  case list of
+    [] -> []
+    first :: rest ->
+      if first == prvok
+      then deleteHelper prvok rest
+      else first :: (deleteHelper prvok rest)
+
+showHelper : List String -> List String -> List String
+showHelper list final_list =
+  case list of
+    [] -> final_list
+    first :: rest ->
+      if List.member first final_list
+      then showHelper rest final_list
+      else showHelper rest (final_list ++ [first])
 
 -- FUNKCIE K UDAJOVEMU TYPU
 
@@ -236,3 +289,39 @@ fromList meno list vkladame =
       if first == meno
       then (first :: vkladame) :: rest1
       else first1 :: (fromList meno rest1 vkladame) 
+
+delete : String -> String -> List (List String) -> List (List String)
+delete meno prvok list =
+ case list of
+   [] -> [[]]
+   first1 :: rest1 ->
+     case first1 of
+     [] -> delete meno prvok rest1
+     first :: rest ->
+      if first == meno
+      then (first :: (deleteHelper prvok rest)) :: rest1
+      else first1 :: (delete meno prvok rest1) 
+
+show : String -> List (List String) -> String
+show meno list =
+ case list of
+   [] -> ""
+   first1 :: rest1 ->
+     case first1 of
+       [] -> show meno rest1
+       first :: rest ->
+         if first == meno
+         then listToString identity (showHelper rest [])
+         else show meno rest1
+
+card : String -> List (List String) -> Int
+card meno list =
+ case list of
+   [] -> 0
+   first1 :: rest1 ->
+     case first1 of
+       [] -> card meno rest1
+       first :: rest ->
+         if first == meno
+         then List.length (showHelper rest [])
+         else card meno rest1
