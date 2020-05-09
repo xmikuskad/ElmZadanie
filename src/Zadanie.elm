@@ -43,6 +43,11 @@ type Msg
   | Remove
   | Show
   | Card
+  | Equal
+  | SubSet
+  | Difference
+  | Union
+  | Intersect
 
 
 update : Msg -> Model -> Model
@@ -123,7 +128,57 @@ update msg (st, li) =
                        else if List.member st.meno (getFirsts li)
                        then "Pocet unikatnych prvkov zoznamu " ++ st.meno ++ " je " ++ String.fromInt(card st.meno li)
                        else "Neznamy zoznam "  ++ st.meno)
-       , li)             
+       , li) 
+
+    Equal ->
+      (Stavy "" "" "" (if st.meno == "" 
+                       then "Treba vlozit meno zoznamu" 
+                       else if st.prvok == ""
+                       then "Treba vlozit meno druheho zoznamu"
+                       else if List.member st.meno (getFirsts li) && List.member st.prvok (getFirsts li)
+                       then equal st.meno st.prvok li
+                       else "Neznamy zoznam "  ++ st.meno ++ " alebo " ++st.prvok)
+       , li)      
+
+    SubSet ->
+      (Stavy "" "" "" (if st.meno == "" 
+                       then "Treba vlozit meno zoznamu" 
+                       else if st.prvok == ""
+                       then "Treba vlozit meno druheho zoznamu"
+                       else if List.member st.meno (getFirsts li) && List.member st.prvok (getFirsts li)
+                       then subSet st.meno st.prvok li
+                       else "Neznamy zoznam "  ++ st.meno ++ " alebo " ++st.prvok)
+       , li)   
+
+    Difference ->
+      (Stavy "" "" "" (if st.meno == "" 
+                       then "Treba vlozit meno zoznamu" 
+                       else if st.prvok == ""
+                       then "Treba vlozit meno druheho zoznamu"
+                       else if List.member st.meno (getFirsts li) && List.member st.prvok (getFirsts li)
+                       then difference st.meno st.prvok li
+                       else "Neznamy zoznam "  ++ st.meno ++ " alebo " ++st.prvok)
+       , li)  
+
+    Union ->
+      (Stavy "" "" "" (if st.meno == "" 
+                       then "Treba vlozit meno zoznamu" 
+                       else if st.prvok == ""
+                       then "Treba vlozit meno druheho zoznamu"
+                       else if List.member st.meno (getFirsts li) && List.member st.prvok (getFirsts li)
+                       then union st.meno st.prvok li
+                       else "Neznamy zoznam "  ++ st.meno ++ " alebo " ++st.prvok)
+       , li) 
+
+    Intersect ->
+      (Stavy "" "" "" (if st.meno == "" 
+                       then "Treba vlozit meno zoznamu" 
+                       else if st.prvok == ""
+                       then "Treba vlozit meno druheho zoznamu"
+                       else if List.member st.meno (getFirsts li) && List.member st.prvok (getFirsts li)
+                       then intersect st.meno st.prvok li
+                       else "Neznamy zoznam "  ++ st.meno ++ " alebo " ++st.prvok)
+       , li) 
 
 -- VIEW
 
@@ -139,7 +194,7 @@ view (st, li) =
     , viewInput "text" "Prvok/druhy zoznam" st.prvok Prvok
     , br [][]
     , viewInput "text" "Zoznam prvkov" st.zoznam Zoznam
-    , text " Pri oddelovani prvkov zoznamu pouzite medzeru"
+    , text " Pri oddelovani prvkov zoznamu pouzite jednu medzeru"
     , br [][]
     , br [][]
     , button [ onClick Empty ] [ text "Empty" ]
@@ -154,6 +209,15 @@ view (st, li) =
     , button [ onClick Card ] [ text "Card" ]            
     , br [][]
     , br [][]
+    , button [ onClick Equal ] [ text "Equal" ]    
+    , button [ onClick SubSet ] [ text "SubSet" ]  
+    , button [ onClick Difference ] [ text "Difference" ]                
+    , br [][]
+    , br [][]   
+    , button [ onClick Union ] [ text "Union" ]  
+    , button [ onClick Intersect ] [ text "Intersect" ]                    
+    , br [][]
+    , br [][]        
     , div [][text "Definovane zoznamy: "]
     , viewNames li
 --    , div [][text <| listToString identity (List.map (listToString identity) li)]
@@ -209,6 +273,7 @@ isInHelper prvok list =
       then "Prvok je v mnozine"
       else isInHelper prvok rest
 
+-- Vymaze vsetky instancie prvku
 deleteHelper : String -> List (String) -> List (String)
 deleteHelper prvok list =
   case list of
@@ -226,6 +291,58 @@ showHelper list final_list =
       if List.member first final_list
       then showHelper rest final_list
       else showHelper rest (final_list ++ [first])
+
+-- Vrati mnozinu ked dostane meno
+getSet : String -> List(List String) -> List String
+getSet meno list = 
+ case list of
+   [] -> []
+   first1 :: rest1 ->
+     case first1 of
+     [] -> getSet meno rest1
+     first :: rest ->
+      if first == meno
+      then rest
+      else getSet meno rest1
+
+equalHelper : List String -> List String -> String
+equalHelper list1 list2 =
+  case list1 of
+    [] -> if list2 == []
+          then "Mnoziny su ekvivalentne"
+          else "Mnoziny nie su ekvivalentne"
+    first :: rest ->
+      if List.member first list2
+      then equalHelper (deleteHelper first list1) (deleteHelper first list2)
+      else "Mnoziny nie su ekvivalentne"
+
+subSetHelper : List String -> List String -> String
+subSetHelper list1 list2 =
+  case list2 of
+    [] -> "Druha mnozina je podmnozinou prvej"
+    first :: rest ->
+      if List.member first list1
+      then subSetHelper (deleteHelper first list1) (deleteHelper first list2)
+      else "Druha mnozina nie je podmnozinou prvej"
+
+differenceHelper : List String -> List String -> List String
+differenceHelper list1 list2 =
+  case list2 of
+    [] -> list1
+    first :: rest ->
+      if List.member first list1
+      then differenceHelper (deleteHelper first list1) (deleteHelper first list2)
+      else differenceHelper list1 rest
+
+intersectHelper : List String -> List String -> List String -> List String
+intersectHelper list1 list2 final_list =
+  case list2 of
+    [] -> final_list
+    first :: rest ->
+      if List.member first list1
+      then intersectHelper (deleteHelper first list1) (deleteHelper first list2) (final_list ++ [first])
+      else intersectHelper list1 rest final_list     
+
 
 -- FUNKCIE K UDAJOVEMU TYPU
 
@@ -325,3 +442,23 @@ card meno list =
          if first == meno
          then List.length (showHelper rest [])
          else card meno rest1
+
+equal : String-> String -> List(List String) -> String
+equal meno1 meno2 list = 
+  equalHelper (getSet meno1 list) (getSet meno2 list)
+
+subSet : String-> String -> List(List String) -> String
+subSet meno1 meno2 list = 
+  subSetHelper (getSet meno1 list) (getSet meno2 list)
+
+difference : String -> String -> List(List String) -> String
+difference meno1 meno2 list =
+  listToString identity (differenceHelper (getSet meno1 list) (getSet meno2 list))
+
+union : String-> String -> List(List String) -> String
+union meno1 meno2 list = 
+  listToString identity  ((getSet meno1 list) ++ (getSet meno2 list))  
+
+intersect : String -> String -> List(List String) -> String
+intersect meno1 meno2 list =
+  listToString identity (intersectHelper (getSet meno1 list) (getSet meno2 list) [])  
